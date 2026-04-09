@@ -1,0 +1,11 @@
+torch==2.2.0
+torchvision==0.17.0
+Pillow==10.2.0
+numpy==1.26.4
+nltk==3.8.1
+pycocotools==2.0.7
+h5py==3.10.0
+tqdm==4.66.2
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9

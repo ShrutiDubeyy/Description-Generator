@@ -1,0 +1,17 @@
+# Python virtual environment
+venv/
+
+# Compiled Python files
+__pycache__/
+*.pyc
+
+# Checkpoints / large model files (tracked via LFS)
+checkpoints/
+*.pth
+
+# Data files (if too large, keep local or use LFS)
+data/
+
+# Optional: OS-specific files
+.DS_Store
+Thumbs.db

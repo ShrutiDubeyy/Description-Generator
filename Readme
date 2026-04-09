@@ -1,0 +1,378 @@
+.md
+# 🖼️ Image Caption Generator
+
+> An end-to-end deep learning system that generates descriptive captions for images using CNN + Attention + LSTM architecture, with a FastAPI backend supporting multiple social media platforms.
+
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.2.0-orange)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+---
+
+## 📌 Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Dataset](#dataset)
+- [Training](#training)
+- [API Usage](#api-usage)
+- [Results](#results)
+- [Tech Stack](#tech-stack)
+- [Future Work](#future-work)
+
+---
+
+## 📖 Overview
+
+This project implements an **Image Caption Generator** from scratch using deep learning. Given an input image, the model generates a natural language description of the visual content. The system supports platform-specific caption styles for Instagram, LinkedIn, Twitter, and Email.
+
+The model is built using:
+- **ResNet-50** as the CNN encoder for visual feature extraction
+- **Bahdanau Attention Mechanism** to focus on relevant image regions
+- **LSTM Decoder** for sequential caption generation
+- **FastAPI** for serving the model as a REST API
+
+---
+
+## 🏗️ Architecture
+
+```
+Input Image [224x224]
+      ↓
+ResNet-50 Encoder (pretrained, frozen)
+      ↓
+Feature Map [49 regions × 2048 features]
+      ↓
+Bahdanau Attention Mechanism
+      ↓
+LSTM Decoder (word by word)
+      ↓
+Generated Caption
+```
+
+### Key Components
+
+| Component | Description |
+|-----------|-------------|
+| **Encoder** | ResNet-50 pretrained on ImageNet, outputs 49 spatial region features |
+| **Attention** | Soft Bahdanau attention — learns which image regions to focus on per word |
+| **Decoder** | LSTM with 512 hidden units, generates captions word by word |
+| **Postprocessor** | Converts descriptions to platform-specific captions |
+
+---
+
+## ✨ Features
+
+- **Image to Caption** — upload any image and get an instant description
+- **Platform Specific** — generates captions styled for:
+  - Instagram (casual, emoji, hashtags)
+  - LinkedIn (professional, formal)
+  - Twitter (short, punchy)
+  - Email (descriptive, formal)
+- **Attention Visualization** — see which image regions the model focused on
+- **REST API** — FastAPI backend with Swagger UI
+- **Resume Training** — checkpoint saving after every epoch
+
+---
+
+## 📁 Project Structure
+
+```
+caption_generator/
+│
+├── api/
+│   └── main.py                  # FastAPI backend
+│
+├── checkpoints/
+│   ├── best_model.pth           # trained model weights
+│   ├── checkpoint_epoch10.pth   # training checkpoint
+│   └── vocab.pkl                # saved vocabulary
+│
+├── data/
+│   └── flickr8k/
+│       ├── Images/              # 8,091 training images
+│       └── captions.txt         # image-caption pairs
+│
+├── src/
+│   ├── attention.py             # Bahdanau attention mechanism
+│   ├── dataset.py               # data loading and vocabulary
+│   ├── decoder.py               # LSTM caption decoder
+│   ├── encoder.py               # ResNet-50 image encoder
+│   ├── model.py                 # complete model
+│   ├── platform_dataset.py      # platform-specific dataset
+│   └── postprocessor.py         # platform caption conversion
+│
+├── config.py                    # all hyperparameters and settings
+├── train.py                     # training script
+├── requirements.txt             # dependencies
+└── README.md
+```
+
+---
+
+## ⚙️ Installation
+
+### Prerequisites
+- Python 3.11+
+- CUDA GPU (recommended) or CPU
+
+### Step 1 — Clone the repository
+```bash
+git clone https://github.com/yourusername/caption_generator.git
+cd caption_generator
+```
+
+### Step 2 — Create virtual environment
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+```
+
+### Step 3 — Install dependencies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+---
+
+## 📦 Requirements
+
+```txt
+torch==2.2.0
+torchvision==0.17.0
+Pillow==10.2.0
+numpy==1.26.4
+nltk==3.8.1
+pycocotools-windows==2.0.0.2
+h5py==3.10.0
+tqdm==4.66.2
+fastapi==0.110.0
+uvicorn==0.27.1
+python-multipart==0.0.9
+datasets==2.16.1
+pandas==2.2.0
+```
+
+---
+
+## 📊 Dataset
+
+This project uses the **Flickr8k dataset** — 8,091 images each paired with 5 human-written captions.
+
+### Download
+
+1. Go to [Kaggle — Flickr8k](https://www.kaggle.com/datasets/adityajn105/flickr8k)
+2. Download and extract
+3. Place files in:
+
+```
+data/flickr8k/
+├── Images/        ← 8,091 .jpg images
+└── captions.txt   ← image-caption pairs
+```
+
+### Dataset Stats
+
+| Property | Value |
+|----------|-------|
+| Total images | 8,091 |
+| Captions per image | 5 |
+| Total captions | 40,455 |
+| Vocabulary size | ~3,045 words |
+| Image size | 224 × 224 |
+
+---
+
+## 🏋️ Training
+
+### Local Training (CPU)
+```bash
+python train.py
+```
+
+### Google Colab Training (Recommended — free GPU)
+
+Training on a laptop CPU takes ~4 hours per epoch. Use Google Colab's free T4 GPU for 10-15 minutes per epoch.
+
+1. Open [Google Colab](https://colab.research.google.com)
+2. Enable GPU: **Runtime → Change runtime type → T4 GPU**
+3. Mount Google Drive:
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+```
+4. Upload your project zip and run training
+
+### Training Configuration
+
+Edit `config.py` to adjust hyperparameters:
+
+```python
+BATCH_SIZE    = 32       # images per batch
+EPOCHS        = 20       # training epochs
+LEARNING_RATE = 4e-4     # Adam learning rate
+ENCODER_DIM   = 2048     # ResNet feature size
+DECODER_DIM   = 512      # LSTM hidden size
+ATTENTION_DIM = 512      # attention layer size
+EMBED_DIM     = 512      # word embedding size
+```
+
+### Training Results
+
+| Epoch | Train Loss | Val Loss |
+|-------|-----------|---------|
+| 1 | 3.62 | 3.00 |
+| 5 | 2.37 | 2.38 |
+| 10 | 2.00 | 2.22 |
+
+---
+
+## 🚀 API Usage
+
+### Start the server
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+
+### Interactive Docs
+Open your browser at: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Health check |
+| GET | `/platforms` | List supported platforms |
+| POST | `/caption` | Generate caption for image |
+
+### Generate Caption
+
+```bash
+curl -X POST "http://127.0.0.1:8000/caption" \
+  -F "file=@your_image.jpg" \
+  -F "platform=instagram"
+```
+
+### Sample Response
+
+```json
+{
+  "raw_description": "a woman in a white shirt standing in a room",
+  "caption": "Confidence is my best outfit ✨ #vibes #lifestyle #mood",
+  "platform": "instagram",
+  "words": 9,
+  "status": "success"
+}
+```
+
+### Platform Examples
+
+| Platform | Example Caption |
+|----------|----------------|
+| Instagram | "Confidence is my best outfit ✨ #vibes #lifestyle" |
+| LinkedIn | "Showing up every day with purpose and passion. #WorkEthic #Goals" |
+| Twitter | "main character energy ✨" |
+| Email | "A woman in a white shirt standing in a room, for your reference." |
+
+---
+
+## 📈 Results
+
+### Model Performance
+
+| Metric | Score |
+|--------|-------|
+| Training Loss (epoch 10) | 2.00 |
+| Validation Loss (epoch 10) | 2.22 |
+| Training Time (per epoch, GPU) | ~15 mins |
+| Training Time (per epoch, CPU) | ~4 hours |
+
+### What the model correctly identifies
+
+- Objects — people, animals, vehicles
+- Colors — white, red, blue
+- Actions — running, sitting, standing
+- Scenes — indoor, outdoor, nature
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| Deep Learning | PyTorch 2.2 |
+| CNN Encoder | ResNet-50 (ImageNet pretrained) |
+| Decoder | LSTM with Bahdanau Attention |
+| API Framework | FastAPI |
+| Server | Uvicorn |
+| Image Processing | Pillow, torchvision |
+| Training Platform | Google Colab (T4 GPU) |
+| Dataset | Flickr8k |
+
+---
+
+## 🔬 How It Works
+
+### 1. Image Encoding
+The ResNet-50 encoder processes the input image and extracts a feature map of shape `[49, 2048]` — representing 49 spatial regions each described by 2048 numbers.
+
+### 2. Attention Mechanism
+At each word generation step, the Bahdanau attention module computes a weighted sum over all 49 regions. Weights represent how much the model focuses on each region:
+```
+attention_weight = softmax(W * tanh(encoder_features + decoder_hidden))
+context_vector   = sum(attention_weight * encoder_features)
+```
+
+### 3. Caption Generation
+The LSTM decoder takes the context vector + previous word embedding and predicts the next word. This repeats until the `<end>` token is generated.
+
+### 4. Platform Postprocessing
+The raw description is converted to a platform-specific caption using the postprocessor module which applies tone, style, emojis, and hashtags.
+
+---
+
+## 🔮 Future Work
+
+- [ ] Replace LSTM with Transformer decoder
+- [ ] Replace ResNet-50 with Vision Transformer (ViT)
+- [ ] Fine-tune on real Instagram captions dataset
+- [ ] Add BLEU score evaluation
+- [ ] Add attention map visualization
+- [ ] MongoDB history saving
+- [ ] Frontend UI
+- [ ] Deploy to cloud (AWS/GCP)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgements
+
+- [Flickr8k Dataset](https://www.kaggle.com/datasets/adityajn105/flickr8k) — training data
+- [Show, Attend and Tell](https://arxiv.org/abs/1502.03044) — attention mechanism paper
+- [PyTorch](https://pytorch.org/) — deep learning framework
+- [FastAPI](https://fastapi.tiangolo.com/) — API framework
+
+---
+
+## 👨‍💻 Author
+
+Built with ❤️ as a deep learning project exploring CNN + Attention + LSTM for image captioning.
+
+---
+
+> ⭐ If you found this useful, please give it a star!
